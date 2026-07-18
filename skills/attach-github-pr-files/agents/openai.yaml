@@ -1,0 +1,4 @@
+interface:
+  display_name: "Attach GitHub PR Files"
+  short_description: "Upload files for GitHub pull request Markdown"
+  default_prompt: "Use $attach-github-pr-files to attach this file to the GitHub pull request."

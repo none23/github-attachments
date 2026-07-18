@@ -6,7 +6,10 @@ describe("health endpoint", () => {
     const response = await exports.default.fetch(new Request("https://example.test/healthz"));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: "ok" });
+    await expect(response.json()).resolves.toEqual({
+      status: "ok",
+      service: "github-pr-attachments",
+    });
   });
 
   it("returns a structured 404", async () => {

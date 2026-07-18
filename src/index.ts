@@ -1,12 +1,8 @@
-import { DurableObject } from "cloudflare:workers";
 import { parseAttachmentId, serveAttachment } from "./attachment";
 import { errorResponse, jsonResponse } from "./http";
+import { handleDelete, handleQuota, handleUpload } from "./upload";
 
-export class QuotaLedger extends DurableObject<Env> {
-  async ping(): Promise<"ok"> {
-    return "ok";
-  }
-}
+export { QuotaLedger } from "./quota";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -15,6 +11,18 @@ export default {
     try {
       if (request.method === "GET" && url.pathname === "/healthz") {
         return jsonResponse({ status: "ok", service: "github-pr-attachments" });
+      }
+
+      if (request.method === "POST" && url.pathname === "/v1/attachments") {
+        return await handleUpload(request, env);
+      }
+
+      if (request.method === "GET" && url.pathname === "/v1/quota") {
+        return await handleQuota(request, env);
+      }
+
+      if (request.method === "DELETE" && url.pathname.startsWith("/v1/attachments/")) {
+        return await handleDelete(request, env, url.pathname);
       }
 
       const attachmentId = parseAttachmentId(url.pathname);

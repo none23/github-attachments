@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
+      miniflare: {
+        bindings: { UPLOAD_TOKEN: "replace-with-a-random-secret" },
+      },
     }),
   ],
 });

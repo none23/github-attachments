@@ -6,6 +6,7 @@ node_modules/
 .wrangler/
 coverage/
 dist/
+*.cpuprofile
 
 # Local agent skills installed by Wrangler.
 .agents/
@@ -14,4 +15,3 @@ skills-lock.json
 
 # Local service credentials and smoke-test output.
 .github-attachments/
-

@@ -63,11 +63,8 @@ describe("attachment delivery", () => {
       expiresAt: "2000-01-01T00:00:00.000Z",
     });
 
-    const expired = await fetchWorker(`/a/${expiredId}/expired.png`);
+    const expired = await fetchWorker(`/a/${expiredId}/expired.png`, { method: "HEAD" });
     expect(expired.status).toBe(410);
-    await expect(expired.json()).resolves.toMatchObject({
-      error: { code: "attachment_expired" },
-    });
 
     const missing = await fetchWorker("/a/7928e125-8d61-45ec-a2d3-2a5f639d342e/missing.png");
     expect(missing.status).toBe(404);

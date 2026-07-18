@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { QuotaLimits, ReserveRequest } from "../src/quota";
 
-const NOW = Date.parse("2026-07-18T12:00:00.000Z");
+const NOW = Date.now();
 
 describe("quota ledger", () => {
   it("atomically rejects reservations beyond the byte cap", async () => {

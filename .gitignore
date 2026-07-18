@@ -1,0 +1,17 @@
+node_modules/
+.dev.vars
+.env
+.env.*
+!.env.example
+.wrangler/
+coverage/
+dist/
+
+# Local agent skills installed by Wrangler.
+.agents/
+.claude/
+skills-lock.json
+
+# Local service credentials and smoke-test output.
+.github-attachments/
+

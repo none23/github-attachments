@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "github-attach": "./bin/github-attach.mjs"
+  },
   "scripts": {
     "check": "npm run lint && npm run types:check && npm run typecheck && npm test",
     "deploy": "wrangler deploy --minify",
     "dev": "wrangler dev",
     "format": "biome format --write .",
     "lint": "biome check .",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:cli",
+    "test:cli": "node --test test-node/*.test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
     "types": "wrangler types --env-file .dev.vars.example --strict-vars=false",

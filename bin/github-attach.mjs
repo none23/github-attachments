@@ -3,6 +3,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import process from "node:process";
+import { loadConfiguration } from "./config.mjs";
 
 const CONTENT_TYPES = new Map([
   [".gif", "image/gif"],
@@ -25,8 +26,7 @@ async function main() {
     return;
   }
 
-  const serviceUrl = requiredEnvironment("GITHUB_ATTACHMENTS_URL").replace(/\/$/, "");
-  const token = requiredEnvironment("GITHUB_ATTACHMENTS_TOKEN");
+  const { serviceUrl, token } = await loadConfiguration();
   const bytes = await readFile(options.file);
   const filename = basename(options.file);
   const headers = {
@@ -89,14 +89,6 @@ function parseArguments(arguments_) {
   return options;
 }
 
-function requiredEnvironment(name) {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    throw new Error(`${name} is required`);
-  }
-  return value;
-}
-
 function fail(message) {
   throw new Error(`${message}\n\n${usage()}`);
 }
@@ -104,9 +96,10 @@ function fail(message) {
 function usage() {
   return `Usage: github-attach <file> [--alt <text>] [--json]
 
-Environment:
-  GITHUB_ATTACHMENTS_URL    Deployed service origin
-  GITHUB_ATTACHMENTS_TOKEN  Upload bearer token`;
+Configuration:
+  .env                                      Repository override
+  GITHUB_ATTACHMENTS_TOKEN                  Environment override
+  ~/.config/github-pr-attachments/token     User default`;
 }
 
 main().catch((error) => {

@@ -6,15 +6,41 @@ The service does not receive GitHub credentials and does not call GitHub. Anyone
 
 ## Agent usage
 
-Install dependencies and expose the included CLI:
+Configure credentials once at the user level, then expose the included CLI:
 
 ```bash
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/github-pr-attachments"
+mkdir -p "$config_dir"
+chmod 700 "$config_dir"
+$EDITOR "$config_dir/token"
+chmod 600 "$config_dir/token"
+
 npm install
 npm link
-export GITHUB_ATTACHMENTS_URL=https://github-pr-attachments.none23.workers.dev
-export GITHUB_ATTACHMENTS_TOKEN='your-upload-token'
 github-attach screenshot.png --alt "Settings after the change"
 ```
+
+The token file contains only the raw token, with no variable name or quotes.
+
+### Credential resolution
+
+The CLI and bundled agent skill use the first nonempty token in this order:
+
+| Priority | Location | Scope |
+| ---: | --- | --- |
+| 1 | `GITHUB_ATTACHMENTS_TOKEN` in the repository-root `.env` | Current repository override |
+| 2 | `GITHUB_ATTACHMENTS_TOKEN` in the process environment | Current process override |
+| 3 | `${XDG_CONFIG_HOME:-~/.config}/github-pr-attachments/token` | User-level default |
+
+To override the user token for one repository, add this to that repository's `.env`:
+
+```dotenv
+GITHUB_ATTACHMENTS_TOKEN=repository-specific-token
+```
+
+The repository `.env` must remain uncommitted. This repository ignores `.env` and `.env.*` by default; copy the same rules into repositories that do not already ignore them. Use `.env.example` for placeholder documentation only—never put a real token in it.
+
+`GITHUB_ATTACHMENTS_URL` can be set only in the process environment and otherwise defaults to `https://github-pr-attachments.none23.workers.dev`. Repository `.env` cannot redirect a user-level token to another service. The user token file is not parsed as shell code, and repository `.env` files are read as data rather than sourced.
 
 The CLI prints only Markdown by default:
 
@@ -137,4 +163,3 @@ Cloudflare budget alerts should be enabled as defense in depth. They do not stop
 ## Design
 
 See [DESIGN.md](DESIGN.md) for the original proposal and design rationale.
-

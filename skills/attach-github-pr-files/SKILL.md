@@ -5,6 +5,6 @@ description: Upload local images or files and embed them in a GitHub pull reques
 
 Run this skill's `scripts/upload.sh FILE [ALT]`; paste its Markdown output into the PR.
 
-Require `GITHUB_ATTACHMENTS_TOKEN`. Give images meaningful alt text.
+Resolve credentials from repository `.env`, environment, then user config. Give images meaningful alt text.
 
 Never upload secrets: anyone with the URL can read the file until it expires.

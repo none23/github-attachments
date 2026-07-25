@@ -7,7 +7,12 @@ info:
     name: All rights reserved
     identifier: LicenseRef-Proprietary
 servers:
-  - url: https://github-pr-attachments.none23.workers.dev
+  - url: https://{worker}.{subdomain}.workers.dev
+    variables:
+      worker:
+        default: github-pr-attachments
+      subdomain:
+        default: example
 paths:
   /healthz:
     get:

@@ -1,10 +1,23 @@
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
+import { attachmentKey } from "../src/attachment";
+import { readObjectPrefix } from "../src/config";
 
 const IMAGE_ID = "f7e0c819-f62a-4d66-82c8-2d598bbb5588";
 const IMAGE_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 describe("attachment delivery", () => {
+  it("defaults and validates object prefixes", () => {
+    expect(readObjectPrefix({ OBJECT_PREFIX: "" })).toBe("objects/");
+    expect(readObjectPrefix({ OBJECT_PREFIX: "tenant/objects" })).toBe("tenant/objects/");
+    expect(() => readObjectPrefix({ OBJECT_PREFIX: "../objects/" })).toThrow(
+      "OBJECT_PREFIX must be a safe R2 key prefix",
+    );
+    expect(() => readObjectPrefix({ OBJECT_PREFIX: "tenant//objects/" })).toThrow(
+      "OBJECT_PREFIX must be a safe R2 key prefix",
+    );
+  });
+
   it("streams safe images inline with cross-origin security headers", async () => {
     await seedObject(IMAGE_ID, IMAGE_BYTES, {
       filename: "screen shot.png",
@@ -84,7 +97,7 @@ async function seedObject(
     expiresAt?: string;
   },
 ): Promise<void> {
-  await env.ATTACHMENTS.put(`objects/${id}`, bytes, {
+  await env.ATTACHMENTS.put(attachmentKey(id, env), bytes, {
     httpMetadata: { contentType: metadata.contentType ?? "image/png" },
     customMetadata: {
       filename: metadata.filename,

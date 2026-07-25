@@ -1,3 +1,4 @@
+import { readObjectPrefix } from "./config";
 import { errorResponse } from "./http";
 
 const ATTACHMENT_PATH =
@@ -5,8 +6,8 @@ const ATTACHMENT_PATH =
 
 const INLINE_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
 
-export function attachmentKey(id: string): string {
-  return `objects/${id}`;
+export function attachmentKey(id: string, env: Pick<Env, "OBJECT_PREFIX">): string {
+  return `${readObjectPrefix(env)}${id}`;
 }
 
 export function parseAttachmentId(pathname: string): string | null {
@@ -25,7 +26,7 @@ export async function serveAttachment(request: Request, env: Env, id: string): P
     });
   }
 
-  const key = attachmentKey(id);
+  const key = attachmentKey(id, env);
   const object =
     request.method === "HEAD"
       ? await env.ATTACHMENTS.head(key)

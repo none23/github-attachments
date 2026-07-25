@@ -27,6 +27,7 @@
     }
   ],
   "vars": {
+    "OBJECT_PREFIX": "objects/",
     "MAX_STORED_BYTES": "8000000000",
     "MAX_OBJECTS": "50000",
     "MAX_FILE_BYTES": "25000000",

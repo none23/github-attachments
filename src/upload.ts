@@ -56,7 +56,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
   const expiresAtTimestamp = now + limits.retentionDays * 86_400_000;
   const expiresAt = new Date(expiresAtTimestamp).toISOString();
   const id = crypto.randomUUID().toLowerCase();
-  const key = attachmentKey(id);
+  const key = attachmentKey(id, env);
   const ledger = env.QUOTA.getByName("service");
   const reservation = await ledger.reserve(
     { id, objectKey: key, size, createdAt: now, expiresAt: expiresAtTimestamp },
@@ -137,7 +137,7 @@ export async function handleDelete(
     return errorResponse(404, "not_found", "The requested endpoint does not exist.");
   }
 
-  await env.ATTACHMENTS.delete(attachmentKey(id));
+  await env.ATTACHMENTS.delete(attachmentKey(id, env));
   await env.QUOTA.getByName("service").release(id);
   return new Response(null, { status: 204 });
 }

@@ -127,6 +127,20 @@ export function parseEnvironment(contents) {
   return values;
 }
 
+export function lifecycleRuleStatus(output, ruleId, prefix, retentionDays) {
+  const plain = output.replace(/\u001B\[[0-9;]*m/g, "");
+  const block = plain
+    .split(/\n\s*\n/)
+    .find((candidate) => candidate.includes(`name:     ${ruleId}\n`));
+  if (block === undefined) {
+    return "missing";
+  }
+  return block.includes(`prefix:   ${prefix}\n`) &&
+    block.includes(`action:   Expire objects after ${retentionDays} days`)
+    ? "matching"
+    : "conflicting";
+}
+
 async function main() {
   const parsed = parseArguments(process.argv.slice(2));
   if (parsed.help) {
@@ -171,21 +185,38 @@ async function main() {
     .update(options.prefix)
     .digest("hex")
     .slice(0, 12)}`;
-  runWrangler(
-    [
-      "r2",
-      "bucket",
-      "lifecycle",
-      "add",
-      options.bucket,
-      ruleId,
-      options.prefix,
-      "--expire-days",
-      String(options.retentionDays),
-      "--force",
-    ],
+  const lifecycle = runWrangler(
+    ["r2", "bucket", "lifecycle", "list", options.bucket],
     deploymentEnvironment,
   );
+  const lifecycleStatus = lifecycleRuleStatus(
+    lifecycle.output,
+    ruleId,
+    options.prefix,
+    options.retentionDays,
+  );
+  if (lifecycleStatus === "conflicting") {
+    throw new Error(`Lifecycle rule ${ruleId} already exists with different settings`);
+  }
+  if (lifecycleStatus === "missing") {
+    runWrangler(
+      [
+        "r2",
+        "bucket",
+        "lifecycle",
+        "add",
+        options.bucket,
+        ruleId,
+        options.prefix,
+        "--expire-days",
+        String(options.retentionDays),
+        "--force",
+      ],
+      deploymentEnvironment,
+    );
+  } else {
+    process.stdout.write(`Lifecycle rule ${ruleId}: already configured\n`);
+  }
 
   const temporaryRoot = join(PROJECT_ROOT, ".github-attachments");
   await mkdir(temporaryRoot, { recursive: true, mode: 0o700 });

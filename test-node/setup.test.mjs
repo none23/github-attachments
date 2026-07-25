@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildWranglerConfig,
+  lifecycleRuleStatus,
   normalizePrefix,
   parseArguments,
   parseEnvironment,
@@ -75,4 +76,16 @@ test("deployment credentials are parsed as data", () => {
       CLOUDFLARE_API_TOKEN: "token value",
     },
   );
+});
+
+test("setup recognizes matching and conflicting lifecycle rules", () => {
+  const output = `name:     attachment-rule
+enabled:  Yes
+prefix:   user/objects/
+action:   Expire objects after 180 days
+`;
+
+  assert.equal(lifecycleRuleStatus(output, "attachment-rule", "user/objects/", 180), "matching");
+  assert.equal(lifecycleRuleStatus(output, "attachment-rule", "user/objects/", 30), "conflicting");
+  assert.equal(lifecycleRuleStatus(output, "other-rule", "user/objects/", 180), "missing");
 });

@@ -111,6 +111,32 @@ test("skill uploader reads the user-level service profile", async (context) => {
   assert.equal(result.stdout, EXPECTED_MARKDOWN);
 });
 
+test("CLI refuses to upload without an explicitly configured service URL", async (context) => {
+  const repository = await temporaryRepository(context);
+  const environment = withoutAttachmentConfiguration();
+  environment.GITHUB_ATTACHMENTS_TOKEN = "test-token";
+  environment.XDG_CONFIG_HOME = join(repository, "empty-config");
+
+  const result = await run(process.execPath, [CLI, FIXTURE], environment, repository);
+
+  assert.equal(result.exitCode, 1);
+  assert.match(result.stderr, /No service URL found/);
+  assert.equal(result.stdout, "");
+});
+
+test("skill uploader refuses to upload without an explicitly configured service URL", async (context) => {
+  const repository = await temporaryRepository(context);
+  const environment = withoutAttachmentConfiguration();
+  environment.GITHUB_ATTACHMENTS_TOKEN = "test-token";
+  environment.XDG_CONFIG_HOME = join(repository, "empty-config");
+
+  const result = await run(SKILL_UPLOADER, [FIXTURE], environment, repository);
+
+  assert.equal(result.exitCode, 1);
+  assert.match(result.stderr, /No service URL found/);
+  assert.equal(result.stdout, "");
+});
+
 async function startServer(context, expected) {
   const server = createServer(async (request, response) => {
     assert.equal(request.method, "POST");

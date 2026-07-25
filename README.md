@@ -48,14 +48,13 @@ The service URL resolves separately:
 | ---: | --- | --- |
 | 1 | `GITHUB_ATTACHMENTS_URL` in the process environment | Current process override |
 | 2 | `${XDG_CONFIG_HOME:-~/.config}/github-pr-attachments/url` | User-level deployment |
-| 3 | `https://github-pr-attachments.none23.workers.dev` | Backward-compatible default |
 
-Repository `.env` cannot redirect a user-level token to another service. User profile files and repository `.env` are parsed as data, never sourced as shell code.
+The URL is required; there is no shared-service fallback. Repository `.env` cannot redirect a user-level token to another service. User profile files and repository `.env` are parsed as data, never sourced as shell code.
 
 The CLI prints only Markdown by default:
 
 ```markdown
-![Settings after the change](https://github-pr-attachments.none23.workers.dev/a/.../screenshot.png)
+![Settings after the change](https://your-worker.your-subdomain.workers.dev/a/.../screenshot.png)
 ```
 
 Pass `--json` to receive the complete upload response. Diagnostics and errors go to standard error.

@@ -34,10 +34,13 @@ read_env_value() {
 
 user_config_root=${XDG_CONFIG_HOME:-"${HOME:?HOME is required}/.config"}
 token_file=$user_config_root/github-pr-attachments/token
+url_file=$user_config_root/github-pr-attachments/url
 token=
 [ ! -r "$token_file" ] || token=$(sed -n '1p' "$token_file")
 [ -z "${GITHUB_ATTACHMENTS_TOKEN-}" ] || token=$GITHUB_ATTACHMENTS_TOKEN
-service_url=${GITHUB_ATTACHMENTS_URL:-https://github-pr-attachments.none23.workers.dev}
+service_url=https://github-pr-attachments.none23.workers.dev
+[ ! -r "$url_file" ] || service_url=$(sed -n '1p' "$url_file")
+[ -z "${GITHUB_ATTACHMENTS_URL-}" ] || service_url=$GITHUB_ATTACHMENTS_URL
 
 repository_env=$(find_repository_root)/.env
 repository_token=$(read_env_value GITHUB_ATTACHMENTS_TOKEN "$repository_env")

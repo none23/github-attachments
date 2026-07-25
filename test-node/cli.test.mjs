@@ -48,14 +48,14 @@ test("repository .env overrides process configuration", async (context) => {
   assert.equal(result.stdout, EXPECTED_MARKDOWN);
 });
 
-test("CLI reads the user-level token file", async (context) => {
+test("CLI reads the user-level service profile", async (context) => {
   const serviceUrl = await startServer(context, { alt: "User config", token: "user-token" });
   const repository = await temporaryRepository(context);
   const configHome = join(repository, "config");
   await mkdir(join(configHome, "github-pr-attachments"), { recursive: true });
   await writeFile(join(configHome, "github-pr-attachments", "token"), "user-token\n");
+  await writeFile(join(configHome, "github-pr-attachments", "url"), `${serviceUrl}\n`);
   const environment = withoutAttachmentConfiguration();
-  environment.GITHUB_ATTACHMENTS_URL = serviceUrl;
   environment.XDG_CONFIG_HOME = configHome;
 
   const result = await run(
@@ -94,14 +94,14 @@ test("skill uploader uses the repository override", async (context) => {
   assert.equal(result.stdout, EXPECTED_MARKDOWN);
 });
 
-test("skill uploader reads the user-level token file", async (context) => {
+test("skill uploader reads the user-level service profile", async (context) => {
   const serviceUrl = await startServer(context, { alt: "Skill user", token: "skill-user-token" });
   const repository = await temporaryRepository(context);
   const configHome = join(repository, "config");
   await mkdir(join(configHome, "github-pr-attachments"), { recursive: true });
   await writeFile(join(configHome, "github-pr-attachments", "token"), "skill-user-token\n");
+  await writeFile(join(configHome, "github-pr-attachments", "url"), `${serviceUrl}\n`);
   const environment = withoutAttachmentConfiguration();
-  environment.GITHUB_ATTACHMENTS_URL = serviceUrl;
   environment.XDG_CONFIG_HOME = configHome;
 
   const result = await run(SKILL_UPLOADER, [FIXTURE, "Skill user"], environment, repository);

@@ -9,9 +9,9 @@ export async function loadConfiguration() {
   const repositoryRoot = await findRepositoryRoot(process.cwd());
   const repository = parseDotEnv(await readOptionalFile(join(repositoryRoot, ".env")));
   const configHome = process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
-  const userToken = (
-    await readOptionalFile(join(configHome, "github-pr-attachments", "token"))
-  ).trim();
+  const serviceConfig = join(configHome, "github-pr-attachments");
+  const userToken = (await readOptionalFile(join(serviceConfig, "token"))).trim();
+  const userUrl = (await readOptionalFile(join(serviceConfig, "url"))).trim();
 
   const token = firstValue(
     repository.GITHUB_ATTACHMENTS_TOKEN,
@@ -26,7 +26,8 @@ export async function loadConfiguration() {
 
   return {
     serviceUrl: (
-      firstValue(process.env.GITHUB_ATTACHMENTS_URL, DEFAULT_SERVICE_URL) ?? DEFAULT_SERVICE_URL
+      firstValue(process.env.GITHUB_ATTACHMENTS_URL, userUrl, DEFAULT_SERVICE_URL) ??
+      DEFAULT_SERVICE_URL
     ).replace(/\/$/, ""),
     token,
   };

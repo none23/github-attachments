@@ -99,7 +99,8 @@ function usage() {
 Configuration:
   .env                                      Repository override
   GITHUB_ATTACHMENTS_TOKEN                  Environment override
-  ~/.config/github-pr-attachments/token     User default`;
+  ~/.config/github-pr-attachments/token     User token
+  ~/.config/github-pr-attachments/url       User service URL`;
 }
 
 main().catch((error) => {

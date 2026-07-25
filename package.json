@@ -12,6 +12,7 @@
     "dev": "wrangler dev",
     "format": "biome format --write .",
     "lint": "biome check .",
+    "setup": "node scripts/setup.mjs",
     "test": "vitest run && npm run test:cli",
     "test:cli": "node --test test-node/*.test.mjs",
     "test:watch": "vitest",

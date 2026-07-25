@@ -243,7 +243,7 @@ function runWrangler(arguments_, environment, required = true) {
 
 async function waitForHealth(serviceUrl) {
   let lastError;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
     try {
       const response = await fetch(`${serviceUrl}/healthz`);
       const body = await response.json();
@@ -254,7 +254,7 @@ async function waitForHealth(serviceUrl) {
     } catch (error) {
       lastError = error;
     }
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_000));
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 2_000));
   }
   throw new Error(`Worker health check failed: ${lastError?.message ?? "unknown error"}`);
 }

@@ -8,6 +8,7 @@
       "!!.agents",
       "!!.claude",
       "!!.github-attachments",
+      "!!wrangler.user.jsonc",
       "!!dist",
       "!!coverage",
       "!!worker-configuration.d.ts"

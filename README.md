@@ -6,21 +6,23 @@ The service does not receive GitHub credentials and does not call GitHub. Anyone
 
 ## Agent usage
 
-Configure credentials once at the user level, then expose the included CLI:
+Deploy the service once or configure an existing profile, then expose the included CLI:
 
 ```bash
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/github-pr-attachments"
 mkdir -p "$config_dir"
 chmod 700 "$config_dir"
 $EDITOR "$config_dir/token"
+$EDITOR "$config_dir/url"
 chmod 600 "$config_dir/token"
+chmod 600 "$config_dir/url"
 
 npm install
 npm link
 github-attach screenshot.png --alt "Settings after the change"
 ```
 
-The token file contains only the raw token, with no variable name or quotes.
+The `token` file contains only the raw upload token. The `url` file contains the Worker origin, such as `https://github-pr-attachments.example.workers.dev`. Neither file uses variable names or quotes. `npm run setup` creates both files automatically.
 
 ### Credential resolution
 
@@ -40,7 +42,15 @@ GITHUB_ATTACHMENTS_TOKEN=repository-specific-token
 
 The repository `.env` must remain uncommitted. This repository ignores `.env` and `.env.*` by default; copy the same rules into repositories that do not already ignore them. Use `.env.example` for placeholder documentation only—never put a real token in it.
 
-`GITHUB_ATTACHMENTS_URL` can be set only in the process environment and otherwise defaults to `https://github-pr-attachments.none23.workers.dev`. Repository `.env` cannot redirect a user-level token to another service. The user token file is not parsed as shell code, and repository `.env` files are read as data rather than sourced.
+The service URL resolves separately:
+
+| Priority | Location | Scope |
+| ---: | --- | --- |
+| 1 | `GITHUB_ATTACHMENTS_URL` in the process environment | Current process override |
+| 2 | `${XDG_CONFIG_HOME:-~/.config}/github-pr-attachments/url` | User-level deployment |
+| 3 | `https://github-pr-attachments.none23.workers.dev` | Backward-compatible default |
+
+Repository `.env` cannot redirect a user-level token to another service. User profile files and repository `.env` are parsed as data, never sourced as shell code.
 
 The CLI prints only Markdown by default:
 
@@ -104,31 +114,63 @@ npm run dev
 
 `npm run check` runs Biome, generated binding drift checks, strict TypeScript checks, Workers-runtime integration tests, and the CLI integration test.
 
-## Initial deployment
+## Deploy your own service
 
-Authenticate Wrangler first:
+Each deployment has one Worker, one upload token, and one statically bound R2 bucket. Upload requests cannot choose or override the bucket.
 
-```bash
-npx wrangler login
-```
+Install dependencies, then create a least-privilege Cloudflare API token with these account permissions:
 
-Create the dedicated private bucket and its lifecycle rule:
+- Workers Scripts: Edit
+- Workers R2 Storage: Edit
+- Account Settings: Read
 
-```bash
-npx wrangler r2 bucket create github-pr-attachments
-npx wrangler r2 bucket lifecycle add \
-  github-pr-attachments expire-attachments objects/ \
-  --expire-days 180 --force
-```
-
-Generate a random token, save it somewhere private, and set the Worker secret through Wrangler's interactive prompt:
+Limit it to the target account. A short expiration and client-IP restriction further reduce its blast radius when appropriate. Save it outside Git:
 
 ```bash
-npx wrangler secret put UPLOAD_TOKEN
-npm run deploy
+deploy_config="${XDG_CONFIG_HOME:-$HOME/.config}/github-pr-attachments"
+mkdir -p "$deploy_config"
+chmod 700 "$deploy_config"
+$EDITOR "$deploy_config/deploy.env"
+chmod 600 "$deploy_config/deploy.env"
 ```
 
-Never commit `.dev.vars`, bearer tokens, or generated credential files.
+`deploy.env` contains:
+
+```dotenv
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_API_TOKEN=your-deployment-token
+```
+
+Create a new private bucket and deploy:
+
+```bash
+npm install
+npm run setup -- \
+  --worker github-pr-attachments-yourname \
+  --bucket github-pr-attachments-yourname \
+  --create-bucket
+```
+
+To reuse an existing private bucket, omit `--create-bucket`:
+
+```bash
+npm run setup -- \
+  --worker github-pr-attachments-yourname \
+  --bucket your-existing-private-bucket \
+  --prefix github-pr-attachments-yourname/objects/
+```
+
+The setup command:
+
+1. Verifies or creates the named bucket.
+2. Adds a prefix-scoped R2 lifecycle rule.
+3. Generates `wrangler.user.jsonc` with the selected Worker, bucket, prefix, and retention.
+4. Generates a 256-bit upload token and deploys it as a Worker secret.
+5. waits for `/healthz`, then writes the user-level `url` and `token` profile.
+
+The default prefix is `<worker-name>/objects/`; the default retention is 180 days. Use `--prefix` and `--retention-days` to change them. Prefixes let multiple deployments safely share one bucket, provided every deployment uses a distinct prefix. `wrangler.user.jsonc`, `.env*`, `.dev.vars`, and `.github-attachments/` are ignored by Git.
+
+The Cloudflare API token is needed only for provisioning and later redeployment. Remove or revoke it after setup if the machine should retain upload access but not deployment access. The user-level `token` is deliberately separate: it can upload through this service but cannot administer Cloudflare.
 
 ## Operations
 

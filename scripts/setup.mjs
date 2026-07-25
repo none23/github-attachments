@@ -128,7 +128,8 @@ export function parseEnvironment(contents) {
 }
 
 export function lifecycleRuleStatus(output, ruleId, prefix, retentionDays) {
-  const plain = output.replace(/\u001B\[[0-9;]*m/g, "");
+  const ansiPattern = new RegExp(`${String.fromCodePoint(27)}\\[[0-9;]*m`, "g");
+  const plain = output.replace(ansiPattern, "");
   const block = plain
     .split(/\n\s*\n/)
     .find((candidate) => candidate.includes(`name:     ${ruleId}\n`));

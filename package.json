@@ -2,6 +2,7 @@
   "name": "github-pr-attachments",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "bin": {
     "github-attach": "./bin/github-attach.mjs"

@@ -3,8 +3,6 @@ import { homedir } from "node:os";
 import { dirname, join, parse } from "node:path";
 import process from "node:process";
 
-const DEFAULT_SERVICE_URL = "https://github-pr-attachments.none23.workers.dev";
-
 export async function loadConfiguration() {
   const repositoryRoot = await findRepositoryRoot(process.cwd());
   const repository = parseDotEnv(await readOptionalFile(join(repositoryRoot, ".env")));
@@ -24,11 +22,15 @@ export async function loadConfiguration() {
     );
   }
 
+  const serviceUrl = firstValue(process.env.GITHUB_ATTACHMENTS_URL, userUrl);
+  if (serviceUrl === undefined) {
+    throw new Error(
+      "No service URL found in GITHUB_ATTACHMENTS_URL or ~/.config/github-pr-attachments/url",
+    );
+  }
+
   return {
-    serviceUrl: (
-      firstValue(process.env.GITHUB_ATTACHMENTS_URL, userUrl, DEFAULT_SERVICE_URL) ??
-      DEFAULT_SERVICE_URL
-    ).replace(/\/$/, ""),
+    serviceUrl: serviceUrl.replace(/\/$/, ""),
     token,
   };
 }

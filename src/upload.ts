@@ -90,7 +90,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
       );
     }
 
-    const publicUrl = `${new URL(request.url).origin}/a/${id}/${encodeURIComponent(filename)}`;
+    const publicUrl = `${new URL(request.url).origin}/a/${id}/${encodeUrlPathSegment(filename)}`;
     const altText = sanitizeAltText(request.headers.get("x-alt-text"), filename);
     const markdown = inline
       ? `![${escapeMarkdown(altText)}](${publicUrl})`
@@ -211,6 +211,13 @@ function quotaError(result: Exclude<ReserveResult, { ok: true }>): Response {
 
 function escapeMarkdown(value: string): string {
   return value.replace(/[\\[\]]/g, "\\$&");
+}
+
+function encodeUrlPathSegment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 function replaceUnsafeCharacters(

@@ -96,6 +96,19 @@ describe("attachment upload API", () => {
     expect(await served.text()).toBe("test log");
   });
 
+  it("percent-encodes parentheses in attachment URLs", async () => {
+    const response = await upload(PNG, { filename: "report).png" });
+    const body = await response.json<UploadBody>();
+
+    expect(response.status).toBe(201);
+    expect(body.url).toMatch(/\/report%29\.png$/);
+    expect(body.markdown).toBe(`![report)](${body.url})`);
+
+    const served = await exports.default.fetch(new Request(body.url));
+    expect(served.status).toBe(200);
+    expect(new Uint8Array(await served.arrayBuffer())).toEqual(PNG);
+  });
+
   it("validates filenames, body length, and image size", async () => {
     const badFilename = await upload(PNG, { filename: ".." });
     expect(badFilename.status).toBe(400);

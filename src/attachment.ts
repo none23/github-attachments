@@ -2,19 +2,39 @@ import { readObjectPrefix } from "./config";
 import { errorResponse } from "./http";
 
 const ATTACHMENT_PATH =
-  /^\/a\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/[^/]*)?$/i;
+  /^\/a\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/([^/]+)$/i;
 
 const INLINE_TYPES = new Set(["image/gif", "image/jpeg", "image/png", "image/webp"]);
+
+export interface AttachmentPath {
+  filename: string;
+  id: string;
+}
 
 export function attachmentKey(id: string, env: Pick<Env, "OBJECT_PREFIX">): string {
   return `${readObjectPrefix(env)}${id}`;
 }
 
-export function parseAttachmentId(pathname: string): string | null {
-  return ATTACHMENT_PATH.exec(pathname)?.[1]?.toLowerCase() ?? null;
+export function parseAttachmentPath(pathname: string): AttachmentPath | null {
+  const match = ATTACHMENT_PATH.exec(pathname);
+  const id = match?.[1];
+  const encodedFilename = match?.[2];
+  if (id === undefined || encodedFilename === undefined) {
+    return null;
+  }
+
+  try {
+    return { filename: decodeURIComponent(encodedFilename), id: id.toLowerCase() };
+  } catch {
+    return null;
+  }
 }
 
-export async function serveAttachment(request: Request, env: Env, id: string): Promise<Response> {
+export async function serveAttachment(
+  request: Request,
+  env: Env,
+  attachment: AttachmentPath,
+): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -26,13 +46,20 @@ export async function serveAttachment(request: Request, env: Env, id: string): P
     });
   }
 
-  const key = attachmentKey(id, env);
+  const key = attachmentKey(attachment.id, env);
   const object =
     request.method === "HEAD"
       ? await env.ATTACHMENTS.head(key)
       : await env.ATTACHMENTS.get(key, { onlyIf: request.headers });
 
   if (object === null) {
+    return errorResponse(404, "attachment_not_found", "The attachment does not exist.");
+  }
+
+  if (object.customMetadata?.filename !== attachment.filename) {
+    if (hasBody(object)) {
+      await object.body.cancel();
+    }
     return errorResponse(404, "attachment_not_found", "The attachment does not exist.");
   }
 

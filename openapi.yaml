@@ -138,7 +138,7 @@ components:
       name: filename
       in: path
       required: true
-      description: Cosmetic display filename; the opaque ID selects the object.
+      description: Exact attachment filename, URL-encoded in the request path.
       schema: { type: string }
   schemas:
     Attachment:

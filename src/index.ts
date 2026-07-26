@@ -1,4 +1,4 @@
-import { parseAttachmentId, serveAttachment } from "./attachment";
+import { parseAttachmentPath, serveAttachment } from "./attachment";
 import { errorResponse, jsonResponse } from "./http";
 import { handleDelete, handleQuota, handleUpload } from "./upload";
 
@@ -25,12 +25,12 @@ export default {
         return await handleDelete(request, env, url.pathname);
       }
 
-      const attachmentId = parseAttachmentId(url.pathname);
+      const attachment = parseAttachmentPath(url.pathname);
       if (
-        attachmentId !== null &&
+        attachment !== null &&
         (request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS")
       ) {
-        return await serveAttachment(request, env, attachmentId);
+        return await serveAttachment(request, env, attachment);
       }
 
       return errorResponse(404, "not_found", "The requested endpoint does not exist.");

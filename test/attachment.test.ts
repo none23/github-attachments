@@ -24,7 +24,7 @@ describe("attachment delivery", () => {
       inline: "1",
     });
 
-    const response = await fetchWorker(`/a/${IMAGE_ID}/anything.png`);
+    const response = await fetchWorker(`/a/${IMAGE_ID}/screen%20shot.png`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/png");
@@ -34,6 +34,23 @@ describe("attachment delivery", () => {
     expect(response.headers.get("cross-origin-resource-policy")).toBe("cross-origin");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(IMAGE_BYTES);
+  });
+
+  it("requires the exact decoded attachment filename", async () => {
+    const filename = "résumé #1%.png";
+    await seedObject(IMAGE_ID, IMAGE_BYTES, { filename, inline: "1" });
+
+    const matching = await fetchWorker(`/a/${IMAGE_ID}/${encodeURIComponent(filename)}`);
+    expect(matching.status).toBe(200);
+
+    const mismatched = await fetchWorker(`/a/${IMAGE_ID}/resume.png`);
+    expect(mismatched.status).toBe(404);
+    await expect(mismatched.json()).resolves.toMatchObject({
+      error: { code: "attachment_not_found" },
+    });
+
+    expect((await fetchWorker(`/a/${IMAGE_ID}`)).status).toBe(404);
+    expect((await fetchWorker(`/a/${IMAGE_ID}/bad%encoding.png`)).status).toBe(404);
   });
 
   it("forces active content to download", async () => {
@@ -78,6 +95,9 @@ describe("attachment delivery", () => {
 
     const expired = await fetchWorker(`/a/${expiredId}/expired.png`, { method: "HEAD" });
     expect(expired.status).toBe(410);
+
+    const disguisedExpired = await fetchWorker(`/a/${expiredId}/other.png`, { method: "HEAD" });
+    expect(disguisedExpired.status).toBe(404);
 
     const missing = await fetchWorker("/a/7928e125-8d61-45ec-a2d3-2a5f639d342e/missing.png");
     expect(missing.status).toBe(404);

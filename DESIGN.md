@@ -206,9 +206,10 @@ Permanent retention is deliberately not the default. It would eventually exhaust
 
 ### Public attachment URLs
 
-- Each URL contains an identifier with at least 128 bits of cryptographic randomness.
+- Each URL contains a UUID v4 identifier with 122 bits of cryptographic randomness.
 - The service exposes no listing, search, or sequential identifier endpoint.
-- The filename portion of the URL is cosmetic and is not used as the storage key.
+- The filename portion is not used as the storage key, but it must exactly match the stored
+  attachment filename.
 - Possession of the URL grants access to the file.
 
 Opaque URLs are public capability URLs, not access control equivalent to a private GitHub repository. They are suitable for nonsensitive screenshots and build artifacts. Secrets, customer data, private source archives, and other confidential files must not be uploaded.

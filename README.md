@@ -245,6 +245,19 @@ npm run dev
 - Public URLs are capability URLs, not private-repository authorization.
 - The service does not scan downloads for malware.
 
+### Attachment enumeration
+
+The private R2 bucket is not exposed for direct public access, and the Worker exposes no attachment
+list or search route. Each public attachment URL combines a cryptographically random UUID with the
+exact filename recorded at upload time; the filename is URL-encoded in the request path. Attachment
+`GET` and `HEAD` requests with an incorrect filename receive the same `404` response as a missing
+attachment, while missing or malformed filename paths also return `404`.
+
+These controls make blind enumeration impractical, but they are not access control. Filenames are
+often predictable, and anyone who obtains a complete attachment URL can access it until it expires
+or is deleted. Upload only nonsensitive files, and avoid exposing attachment URLs in logs or other
+unintended locations.
+
 ## Design and license
 
 See [DESIGN.md](DESIGN.md) for the original proposal and design rationale.

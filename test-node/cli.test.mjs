@@ -121,13 +121,15 @@ test("skill uploader uses the repository override", async (context) => {
 
 test("skill uploader percent-encodes UTF-8 filenames", async (context) => {
   const repository = await temporaryRepository(context);
-  const file = join(repository, UNICODE_FILENAME);
+  const filename = `--${UNICODE_FILENAME}`;
+  const file = join(repository, filename);
+  const markdown = `[${filename}](https://example.test/a/id/${encodeURIComponent(filename)})`;
   await writeFile(file, "unicode attachment\n");
   const serviceUrl = await startServer(context, {
     alt: "Unicode skill",
     body: "unicode attachment\n",
-    filename: UNICODE_FILENAME,
-    markdown: UNICODE_MARKDOWN.trim(),
+    filename,
+    markdown,
     token: "unicode-skill-token",
   });
 
@@ -144,7 +146,7 @@ test("skill uploader percent-encodes UTF-8 filenames", async (context) => {
 
   assert.equal(result.stderr, "");
   assert.equal(result.exitCode, 0);
-  assert.equal(result.stdout, UNICODE_MARKDOWN);
+  assert.equal(result.stdout, `${markdown}\n`);
 });
 
 test("skill uploader reads the user-level service profile", async (context) => {

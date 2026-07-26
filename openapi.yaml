@@ -4,8 +4,8 @@ info:
   version: 0.1.0
   description: Uploads files for programmatic use in GitHub pull-request Markdown.
   license:
-    name: All rights reserved
-    identifier: LicenseRef-Proprietary
+    name: MIT
+    identifier: MIT
 servers:
   - url: https://{worker}.{subdomain}.workers.dev
     variables:

@@ -25,7 +25,7 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
   }
 
   const limits = readLimits(env);
-  const filename = sanitizeFilename(request.headers.get("x-filename"));
+  const filename = sanitizeFilename(decodeFilenameHeader(request.headers));
   if (filename === null) {
     return errorResponse(400, "invalid_filename", "X-Filename must contain a valid filename.");
   }
@@ -162,6 +162,23 @@ function sanitizeFilename(raw: string | null): string | null {
   }
   const sanitized = [...replaceUnsafeCharacters(raw, "_", true).trim()].slice(0, 200).join("");
   return sanitized.length > 0 && sanitized !== "." && sanitized !== ".." ? sanitized : null;
+}
+
+function decodeFilenameHeader(headers: Headers): string | null {
+  const raw = headers.get("x-filename");
+  const encoding = headers.get("x-filename-encoding");
+  if (encoding === null) {
+    return raw;
+  }
+  if (encoding !== "percent" || raw === null) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
 }
 
 function sanitizeAltText(raw: string | null, filename: string): string {

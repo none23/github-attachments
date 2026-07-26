@@ -172,6 +172,9 @@ curl --fail-with-body \
   "$GITHUB_ATTACHMENTS_URL/v1/attachments"
 ```
 
+For non-ASCII filenames, percent-encode the UTF-8 filename in `X-Filename` and add
+`X-Filename-Encoding: percent`. The included CLI and agent skill do this automatically.
+
 See [openapi.yaml](openapi.yaml) for the complete contract.
 
 ## Technical overview

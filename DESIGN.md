@@ -131,12 +131,13 @@ Required headers:
 
 - `Authorization: Bearer <token>`
 - `Content-Length: <bytes>`
-- `X-Filename: <display filename>`
+- `X-Filename: <display filename or percent-encoded UTF-8 filename>`
 
 Optional headers:
 
 - `Content-Type`; defaults to `application/octet-stream`
 - `X-Alt-Text`; used when generating image Markdown
+- `X-Filename-Encoding: percent`; set when `X-Filename` is percent-encoded UTF-8
 
 `Content-Length` is mandatory so the service can reject an upload before reading its body if insufficient quota remains.
 

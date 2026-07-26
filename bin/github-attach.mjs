@@ -34,7 +34,8 @@ async function main() {
     "content-length": String(bytes.byteLength),
     "content-type":
       CONTENT_TYPES.get(extname(filename).toLowerCase()) ?? "application/octet-stream",
-    "x-filename": filename,
+    "x-filename": encodeURIComponent(filename),
+    "x-filename-encoding": "percent",
   };
   if (options.alt !== undefined) {
     headers["x-alt-text"] = options.alt;

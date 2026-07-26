@@ -40,7 +40,13 @@ paths:
         - name: X-Filename
           in: header
           required: true
-          schema: { type: string, maxLength: 200 }
+          description: Raw filename, or percent-encoded UTF-8 when X-Filename-Encoding is percent. Decoded filenames are limited to 200 Unicode characters.
+          schema: { type: string, maxLength: 2400 }
+        - name: X-Filename-Encoding
+          in: header
+          required: false
+          description: Set when X-Filename contains percent-encoded UTF-8.
+          schema: { type: string, enum: [percent] }
         - name: X-Alt-Text
           in: header
           required: false

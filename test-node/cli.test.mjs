@@ -10,6 +10,8 @@ const CLI = resolve("bin/github-attach.mjs");
 const FIXTURE = resolve("test/fixtures/cli-fixture.txt");
 const SKILL_UPLOADER = resolve("skills/attach-github-pr-files/scripts/upload.sh");
 const EXPECTED_MARKDOWN = "[cli-fixture.txt](https://example.test/a/id/cli-fixture.txt)\n";
+const UNICODE_FILENAME = "日本語.txt";
+const UNICODE_MARKDOWN = `[${UNICODE_FILENAME}](https://example.test/a/id/${encodeURIComponent(UNICODE_FILENAME)})\n`;
 
 test("CLI uploads raw bytes and prints only Markdown", async (context) => {
   const serviceUrl = await startServer(context, { alt: "CLI fixture", token: "test-token" });
@@ -70,6 +72,29 @@ test("CLI reads the user-level service profile", async (context) => {
   assert.equal(result.stdout, EXPECTED_MARKDOWN);
 });
 
+test("CLI percent-encodes UTF-8 filenames", async (context) => {
+  const repository = await temporaryRepository(context);
+  const file = join(repository, UNICODE_FILENAME);
+  await writeFile(file, "unicode attachment\n");
+  const serviceUrl = await startServer(context, {
+    alt: "Unicode CLI",
+    body: "unicode attachment\n",
+    filename: UNICODE_FILENAME,
+    markdown: UNICODE_MARKDOWN.trim(),
+    token: "unicode-cli-token",
+  });
+
+  const result = await run(process.execPath, [CLI, file, "--alt", "Unicode CLI"], {
+    ...process.env,
+    GITHUB_ATTACHMENTS_TOKEN: "unicode-cli-token",
+    GITHUB_ATTACHMENTS_URL: serviceUrl,
+  });
+
+  assert.equal(result.stderr, "");
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.stdout, UNICODE_MARKDOWN);
+});
+
 test("skill uploader uses the repository override", async (context) => {
   const serviceUrl = await startServer(context, { alt: "Skill", token: "skill-repo-token" });
   const repository = await temporaryRepository(context);
@@ -92,6 +117,34 @@ test("skill uploader uses the repository override", async (context) => {
   assert.equal(result.stderr, "");
   assert.equal(result.exitCode, 0);
   assert.equal(result.stdout, EXPECTED_MARKDOWN);
+});
+
+test("skill uploader percent-encodes UTF-8 filenames", async (context) => {
+  const repository = await temporaryRepository(context);
+  const file = join(repository, UNICODE_FILENAME);
+  await writeFile(file, "unicode attachment\n");
+  const serviceUrl = await startServer(context, {
+    alt: "Unicode skill",
+    body: "unicode attachment\n",
+    filename: UNICODE_FILENAME,
+    markdown: UNICODE_MARKDOWN.trim(),
+    token: "unicode-skill-token",
+  });
+
+  const result = await run(
+    SKILL_UPLOADER,
+    [file, "Unicode skill"],
+    {
+      ...process.env,
+      GITHUB_ATTACHMENTS_TOKEN: "unicode-skill-token",
+      GITHUB_ATTACHMENTS_URL: serviceUrl,
+    },
+    repository,
+  );
+
+  assert.equal(result.stderr, "");
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.stdout, UNICODE_MARKDOWN);
 });
 
 test("skill uploader reads the user-level service profile", async (context) => {
@@ -142,7 +195,9 @@ async function startServer(context, expected) {
     assert.equal(request.method, "POST");
     assert.equal(request.url, "/v1/attachments");
     assert.equal(request.headers.authorization, `Bearer ${expected.token}`);
-    assert.equal(request.headers["x-filename"], "cli-fixture.txt");
+    const filename = expected.filename ?? "cli-fixture.txt";
+    assert.equal(request.headers["x-filename"], encodeURIComponent(filename));
+    assert.equal(request.headers["x-filename-encoding"], "percent");
     assert.equal(request.headers["x-alt-text"], expected.alt);
     assert.equal(request.headers["content-type"], "text/plain");
 
@@ -150,10 +205,13 @@ async function startServer(context, expected) {
     for await (const chunk of request) {
       chunks.push(chunk);
     }
-    assert.equal(Buffer.concat(chunks).toString("utf8"), "attachment CLI fixture\n");
+    assert.equal(
+      Buffer.concat(chunks).toString("utf8"),
+      expected.body ?? "attachment CLI fixture\n",
+    );
 
     response.writeHead(201, { "content-type": "application/json" });
-    response.end(JSON.stringify({ markdown: EXPECTED_MARKDOWN.trim() }));
+    response.end(JSON.stringify({ markdown: expected.markdown ?? EXPECTED_MARKDOWN.trim() }));
   });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");

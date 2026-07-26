@@ -109,9 +109,37 @@ describe("attachment upload API", () => {
     expect(new Uint8Array(await served.arrayBuffer())).toEqual(PNG);
   });
 
+  it("decodes percent-encoded UTF-8 filenames", async () => {
+    const filename = "日本語.png";
+    const response = await upload(PNG, {
+      filename: encodeURIComponent(filename),
+      filenameEncoding: "percent",
+    });
+    const body = await response.json<UploadBody>();
+
+    expect(response.status).toBe(201);
+    expect(body.filename).toBe(filename);
+    expect(body.url).toContain(`/${encodeURIComponent(filename)}`);
+
+    const served = await exports.default.fetch(new Request(body.url));
+    expect(served.status).toBe(200);
+  });
+
   it("validates filenames, body length, and image size", async () => {
     const badFilename = await upload(PNG, { filename: ".." });
     expect(badFilename.status).toBe(400);
+
+    const unknownFilenameEncoding = await upload(PNG, {
+      filename: "test.png",
+      filenameEncoding: "base64",
+    });
+    expect(unknownFilenameEncoding.status).toBe(400);
+
+    const malformedEncodedFilename = await upload(PNG, {
+      filename: "bad%encoding.png",
+      filenameEncoding: "percent",
+    });
+    expect(malformedEncodedFilename.status).toBe(400);
 
     const missingLength = await authenticatedFetch("/v1/attachments", {
       method: "POST",
@@ -142,6 +170,7 @@ async function upload(
     authorization?: string | null;
     contentType?: string;
     filename?: string;
+    filenameEncoding?: string;
   } = {},
 ): Promise<Response> {
   const headers: Record<string, string> = {
@@ -151,6 +180,9 @@ async function upload(
   };
   if (options.authorization !== null) {
     headers.authorization = options.authorization ?? `Bearer ${TOKEN}`;
+  }
+  if (options.filenameEncoding !== undefined) {
+    headers["x-filename-encoding"] = options.filenameEncoding;
   }
   if (options.altText !== undefined) {
     headers["x-alt-text"] = options.altText;

@@ -57,12 +57,15 @@ fi
 
 output=$(mktemp)
 trap 'rm -f "$output"' EXIT HUP INT TERM
+filename=$(basename "$file")
+encoded_filename=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$filename")
 
 set -- \
   --fail-with-body --silent --show-error \
   --request POST \
   --header "Authorization: Bearer $token" \
-  --header "X-Filename: $(basename "$file")" \
+  --header "X-Filename: $encoded_filename" \
+  --header "X-Filename-Encoding: percent" \
   --header "Content-Type: $(file --brief --mime-type -- "$file")" \
   --data-binary "@$file" \
   --output "$output"
